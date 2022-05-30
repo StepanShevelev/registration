@@ -3,11 +3,12 @@ package db
 import (
 	"crypto/sha1"
 	"fmt"
+	"log"
+	"time"
+
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
-	"log"
-	"time"
 )
 
 const (
@@ -33,6 +34,7 @@ func ConnectToDb() {
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
 		UppendErrorWithPath(err)
+		//TODO Ты пытаешься записывать ошибку в базу до того, как подключился в базу.
 	}
 
 	db.AutoMigrate(&User{})
@@ -61,6 +63,7 @@ func GenerateToken(email string) (string, error) {
 	user, err := FindUserByEmail(email)
 	if err != nil {
 		UppendErrorWithPath(err)
+		//TODO не возвращаешь ошибки
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
@@ -82,12 +85,14 @@ func LoginCheck(email string, password string) error {
 	err = Database.Db.Model(&u).Where("email = ?", email).Take(&u).Error
 	if err != nil {
 		UppendErrorWithPath(err)
+		//TODO не возвращаешь ошибки
 	}
 
 	newHash := GeneratePasswordHash(password)
 	oldHash := u.PasswordHash
 	if newHash != oldHash {
 		log.Fatal("password is incorrect")
+		//TODO не возвращаешь текста ошибки, то есть в случае происхождения ошибки вернул по сути ничего
 		return nil
 	}
 
@@ -107,6 +112,7 @@ func FindUserById(Id int) (*User, error) {
 	result := Database.Db.Preload("Posts").Find(&user, "id = ?", Id)
 
 	if result.Error != nil {
+		//TODO не возвращаешь и не логируешь ошибку
 		return nil, nil
 	}
 	return user, nil
@@ -118,6 +124,7 @@ func FindUserByEmail(Email string) (*User, error) {
 	result := Database.Db.Find(&user, "email = ?", Email)
 
 	if result.Error != nil {
+		//TODO не возвращаешь и не логируешь ошибку
 		return nil, nil
 	}
 	return user, nil
@@ -126,4 +133,5 @@ func FindUserByEmail(Email string) (*User, error) {
 func CreatePost(post *Post) {
 
 	Database.Db.Create(&post)
+	//TODO не обрабатываешь возможные ошибки и не даёшь никакого ответа по результату
 }

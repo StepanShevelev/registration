@@ -1,11 +1,12 @@
 package main
 
 import (
+	"net/http"
+
 	"github.com/StepanShevelev/registration/pkg/api"
 	cfg "github.com/StepanShevelev/registration/pkg/config"
 	mydb "github.com/StepanShevelev/registration/pkg/db"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 func main() {
@@ -13,6 +14,7 @@ func main() {
 	config := cfg.New()
 	if err := config.Load("./configs", "config", "yml"); err != nil {
 		mydb.UppendErrorWithPath(err)
+		//TODO Ты пытаешься записывать ошибку в базу до того, как подключился в базу.
 	}
 
 	mydb.ConnectToDb()
