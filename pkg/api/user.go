@@ -1,9 +1,10 @@
 package api
 
 import (
+	"net/http"
+
 	mydb "github.com/StepanShevelev/registration/pkg/db"
 	"github.com/gin-gonic/gin"
-	"net/http"
 )
 
 type signUpInput struct {
@@ -19,6 +20,8 @@ func SignUp(c *gin.Context) {
 
 	if err := c.ShouldBindJSON(&input); err != nil {
 		mydb.UppendErrorWithPath(err)
+		//TODO зачем продолжается функция после этой ошибки?
+		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 	}
 	var u mydb.User
 
@@ -53,18 +56,21 @@ func SignIn(c *gin.Context) {
 
 	if err := c.BindJSON(&input); err != nil {
 		mydb.UppendErrorWithPath(err)
+		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 		return
 	}
 
 	err := mydb.LoginCheck(input.Email, input.Password)
 	if err != nil {
 		mydb.UppendErrorWithPath(err)
+		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 		return
 	}
 
 	token, err := mydb.GenerateToken(input.Email)
 	if err != nil {
 		mydb.UppendErrorWithPath(err)
+		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 		return
 	}
 
@@ -93,6 +99,7 @@ func GetProfile(ctx *gin.Context) *mydb.User {
 	user, err := mydb.FindUserById(userId)
 	if err != nil {
 		mydb.UppendErrorWithPath(err)
+		//TODO не возвращаешь ошибки
 	}
 	return user
 }
