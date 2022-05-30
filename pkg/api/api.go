@@ -6,31 +6,31 @@ import (
 	"strconv"
 )
 
-func InitRoutes() *gin.Engine {
-	router := gin.Default()
-
-	auth := router.Group("/auth")
-	{
-		auth.POST("/sign-up", SignUp)
-		auth.POST("/sign-in", SignIn)
-	}
-
-	profile := router.Group("/profile")
-	{
-		{
-			profile.GET("/:id", GetUserProfile)
-		}
-	}
-
-	//post := router.Group("/post")
-	//{
-	//	post.POST("/", CreatePost)
-	//	post.PATCH("/:id", UpdatePost)
-	//	post.DELETE("/:id", DeletePost)
-	//}
-
-	return router
-}
+//func InitRoutes() *gin.Engine {
+//	router := gin.Default()
+//
+//	auth := router.Group("/auth")
+//	{
+//		auth.POST("/sign-up", SignUp)
+//		auth.POST("/sign-in", SignIn)
+//	}
+//
+//	profile := router.Group("/profile")
+//	{
+//		{
+//			profile.GET("/:id", GetUserProfile)
+//		}
+//	}
+//
+//	//post := router.Group("/post")
+//	//{
+//	//	post.POST("/", CreatePost)
+//	//	post.PATCH("/:id", UpdatePost)
+//	//	post.DELETE("/:id", DeletePost)
+//	//}
+//
+//	return router
+//}
 
 func parseId(c *gin.Context) (int, bool) {
 	keys, ok := c.Request.URL.Query()["id"]

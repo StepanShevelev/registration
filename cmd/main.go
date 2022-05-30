@@ -18,9 +18,14 @@ func main() {
 	}
 
 	mydb.ConnectToDb()
-	api.InitRoutes()
+	//api.InitRoutes()
 
 	r := gin.Default()
+
+	auth := r.Group("/api")
+
+	auth.POST("/register", api.SignUp)
+	auth.POST("/login", api.SignIn)
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
