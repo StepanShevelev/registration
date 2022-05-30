@@ -27,6 +27,13 @@ func main() {
 	auth.POST("/register", api.SignUp)
 	auth.POST("/login", api.SignIn)
 
+	post := r.Group("/post")
+		//{
+			post.POST("/", api.CreatePost)
+		//	post.PATCH("/:id", UpdatePost)
+		//	post.DELETE("/:id", DeletePost)
+		}
+
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{
 			"message": "pong",
