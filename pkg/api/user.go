@@ -1,10 +1,15 @@
 package api
 
 import (
-	"net/http"
-
 	mydb "github.com/StepanShevelev/registration/pkg/db"
 	"github.com/gin-gonic/gin"
+	"net/http"
+	"strings"
+)
+
+const (
+	authorizationHeader = "Authorization"
+	userCtx             = "email"
 )
 
 type signUpInput struct {
@@ -47,8 +52,9 @@ func SignUp(c *gin.Context) {
 }
 
 type signInInput struct {
-	Email    string `json:"email" binding:"required"`
-	Password string `json:"password" binding:"required"`
+	ID       int    `json:"id"`
+	Email    string `json:"email" `
+	Password string `json:"password" `
 }
 
 func SignIn(c *gin.Context) {
@@ -60,7 +66,7 @@ func SignIn(c *gin.Context) {
 		return
 	}
 
-	err := mydb.LoginCheck(input.Email, input.Password)
+	err := mydb.LoginCheck(c, input.Email, input.Password)
 	if err != nil {
 		mydb.UppendErrorWithPath(err)
 		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
@@ -73,33 +79,79 @@ func SignIn(c *gin.Context) {
 		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 		return
 	}
+	user, err := mydb.FindUserByEmail(input.Email)
+	if err != nil {
+		mydb.UppendErrorWithPath(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn`t find user "})
+		return
+	}
+
+	user.JwtToken = token
+	mydb.Database.Db.Save(&user)
 
 	c.JSON(http.StatusOK, map[string]interface{}{
 		"token": token,
 	})
 }
 
-func GetUserProfile(c *gin.Context) {
+type findProfileInInput struct {
+	UserId int `json:"user_id" binding:"required"`
+}
 
-	usr := GetProfile(c)
+func GetUserProfile(c *gin.Context) {
+	//var input findProfileInInput
+
+	header := c.GetHeader(authorizationHeader)
+	if header == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "empty auth header"})
+		return
+	}
+
+	var user *mydb.User
+
+	userHeader := mydb.Database.Db.Find(&user, "jwt_token = ?", header)
+	if userHeader.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+		mydb.UppendErrorWithPath(userHeader.Error)
+		return
+	}
+
+	usr, err := mydb.FindUserById(user.ID)
+	if err != nil {
+		mydb.UppendErrorWithPath(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Couldn`t find user "})
+		return
+	}
 
 	c.JSON(http.StatusOK, map[string]interface{}{
+		"id":    usr.ID,
 		"name":  usr.Name,
 		"email": usr.Email,
 		"posts": usr.Posts,
 	})
 }
 
-func GetProfile(ctx *gin.Context) *mydb.User {
-	userId, okId := parseId(ctx)
-	if !okId {
-		return nil
+func UserIdentity(c *gin.Context) {
+	header := c.GetHeader(authorizationHeader)
+	if header == "" {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "empty auth header"})
+		return
+	}
+	var user *mydb.User
+
+	userHeader := mydb.Database.Db.Find(&user, "jwt_token = ?", header)
+	if userHeader.Error != nil {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+		mydb.UppendErrorWithPath(userHeader.Error)
+		return
 	}
 
-	user, err := mydb.FindUserById(userId)
-	if err != nil {
-		mydb.UppendErrorWithPath(err)
-		//TODO не возвращаешь ошибки
+	headerParts := strings.Split(header, ".")
+	if len(headerParts) != 3 {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
+		mydb.UppendErrorWithPath(userHeader.Error)
+		c.Abort()
+		return
 	}
-	return user
+
 }

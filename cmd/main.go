@@ -22,17 +22,18 @@ func main() {
 
 	r := gin.Default()
 
-	auth := r.Group("/api")
+	auth := r.Group("/auth")
 
 	auth.POST("/register", api.SignUp)
 	auth.POST("/login", api.SignIn)
 
-	post := r.Group("/post")
-		//{
-			post.POST("/", api.CreatePost)
-		//	post.PATCH("/:id", UpdatePost)
-		//	post.DELETE("/:id", DeletePost)
-		}
+	apii := r.Group("/API", api.UserIdentity)
+	{
+		apii.POST("/create_post", api.CreatePost)
+		apii.PATCH("/update_post", api.UpdatePost)
+		apii.DELETE("/delete_post", api.DeletePost)
+		apii.GET("/profile", api.GetUserProfile)
+	}
 
 	r.GET("/ping", func(c *gin.Context) {
 		c.JSON(200, gin.H{

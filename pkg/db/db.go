@@ -3,18 +3,18 @@ package db
 import (
 	"crypto/sha1"
 	"fmt"
-	"log"
-	"time"
-
+	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
+	"net/http"
+	"time"
 )
 
 const (
 	salt       = "hdssdvszxzad"
 	signingKey = "qrkjk#4#%35FSFJlja#4353KSFjH"
-	tokenTTL   = 60
+	tokenTTL   = 1
 )
 
 type tokenClaims struct {
@@ -77,7 +77,7 @@ func GenerateToken(email string) (string, error) {
 	return token.SignedString([]byte(signingKey))
 }
 
-func LoginCheck(email string, password string) error {
+func LoginCheck(c *gin.Context, email string, password string) error {
 
 	var err error
 	var u *User
@@ -88,10 +88,11 @@ func LoginCheck(email string, password string) error {
 		//TODO не возвращаешь ошибки
 	}
 
-	newHash := GeneratePasswordHash(password)
 	oldHash := u.PasswordHash
+	newHash := GeneratePasswordHash(password)
+
 	if newHash != oldHash {
-		log.Fatal("password is incorrect")
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "incorrect password"})
 		//TODO не возвращаешь текста ошибки, то есть в случае происхождения ошибки вернул по сути ничего
 		return nil
 	}
@@ -109,13 +110,26 @@ func LoginCheck(email string, password string) error {
 func FindUserById(Id int) (*User, error) {
 	var user *User
 
-	result := Database.Db.Preload("Posts").Find(&user, "id = ?", Id)
+	result := Database.Db.Preload("Posts.Users").Find(&user, "id = ?", Id)
+
+	if result.Error != nil {
+		//TODO не возвращаешь и не логируешь ошибку
+		UppendErrorWithPath(result.Error)
+		return nil, nil
+	}
+	return user, nil
+}
+
+func FindPostById(Id int) (*Post, error) {
+	var post *Post
+
+	result := Database.Db.Preload("Users").Find(&post, "id = ?", Id)
 
 	if result.Error != nil {
 		//TODO не возвращаешь и не логируешь ошибку
 		return nil, nil
 	}
-	return user, nil
+	return post, nil
 }
 
 func FindUserByEmail(Email string) (*User, error) {
