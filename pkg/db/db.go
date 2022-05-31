@@ -49,7 +49,7 @@ func ConnectToDb() {
 func CreateUser(user *User) {
 
 	Database.Db.Create(&user)
-
+	//TODO Проверка на ошибку
 }
 
 func GeneratePasswordHash(password string) string {
@@ -128,6 +128,7 @@ func FindPostById(Id int) (*Post, error) {
 	if result.Error != nil {
 		//TODO не возвращаешь и не логируешь ошибку
 		return nil, nil
+		//TODO nil вместо ошибки?
 	}
 	return post, nil
 }
@@ -140,6 +141,7 @@ func FindUserByEmail(Email string) (*User, error) {
 	if result.Error != nil {
 		//TODO не возвращаешь и не логируешь ошибку
 		return nil, nil
+		//TODO nil вместо ошибки?
 	}
 	return user, nil
 }

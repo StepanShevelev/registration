@@ -55,6 +55,7 @@ func CreatePost(c *gin.Context) {
 	post.Users = append(post.Users, mydb.User{ID: user.ID})
 
 	mydb.Database.Db.Model(&post).Association("Users").Append(&user)
+	//TODO нет проверки на ошибку
 	mydb.CreatePost(&post)
 	c.JSON(http.StatusOK, gin.H{"success": "Post Created"})
 }
@@ -101,6 +102,7 @@ func UpdatePost(c *gin.Context) {
 	post.Image = input.Image
 
 	mydb.Database.Db.Save(&post)
+	//TODO нет проверки на ошибку
 	c.JSON(http.StatusOK, gin.H{"success": "Post Updated"})
 	c.JSON(http.StatusOK, map[string]interface{}{
 		"id":    input.ID,
@@ -148,5 +150,6 @@ func DeletePost(c *gin.Context) {
 	}
 
 	mydb.Database.Db.Delete(&post)
+	//TODO нет проверки на ошибку
 	c.JSON(http.StatusOK, gin.H{"success": "Post Deleted"})
 }
