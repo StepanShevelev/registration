@@ -40,9 +40,9 @@ func SignUp(c *gin.Context) {
 	u.Password = input.Password
 	u.Email = input.Email
 	u.JwtToken, _ = mydb.GenerateToken(input.Email)
-
+	//TODO ошибочка
 	mydb.CreateUser(&u)
-
+	//TODO проверка ошибки
 	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
 
 	c.JSON(http.StatusOK, map[string]interface{}{
