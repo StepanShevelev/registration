@@ -42,10 +42,9 @@ func CreatePost(c *gin.Context) {
 	var input PostInput
 	if err := c.ShouldBindJSON(&input); err != nil {
 		mydb.UppendErrorWithPath(err)
-		c.JSON(http.StatusBadRequest, gin.H{"error": "что-то не то с жсоном"})
+		c.JSON(http.StatusBadRequest, gin.H{"error": "something wrong with json"})
 		return
-		//TODO зачем продолжается функция после этой ошибки?
-		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
+
 	}
 	var post mydb.Post
 
@@ -56,7 +55,11 @@ func CreatePost(c *gin.Context) {
 
 	mydb.Database.Db.Model(&post).Association("Users").Append(&user)
 	//TODO нет проверки на ошибку
-	mydb.CreatePost(&post)
+	err := mydb.CreatePost(c, &post)
+	if err != nil {
+		mydb.UppendErrorWithPath(err)
+		c.AbortWithError(http.StatusUnauthorized, err)
+	}
 	c.JSON(http.StatusOK, gin.H{"success": "Post Created"})
 }
 
@@ -65,6 +68,7 @@ func UpdatePost(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "auth header is really empty"})
+
 		return
 	}
 
@@ -73,6 +77,7 @@ func UpdatePost(c *gin.Context) {
 	userHeader := mydb.Database.Db.Find(&user, "jwt_token = ?", header)
 	if userHeader.Error != nil {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+		c.AbortWithError(http.StatusUnauthorized, userHeader.Error)
 		mydb.UppendErrorWithPath(userHeader.Error)
 		return
 	}
@@ -80,11 +85,12 @@ func UpdatePost(c *gin.Context) {
 	if len(headerParts) != 3 {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid token"})
 		mydb.UppendErrorWithPath(userHeader.Error)
-		c.Abort()
+		c.AbortWithError(http.StatusUnauthorized, userHeader.Error)
 		return
 	}
 
 	var input PostInput
+
 	if err := c.ShouldBindJSON(&input); err != nil {
 		mydb.UppendErrorWithPath(err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "что-то не то с жсоном"})
@@ -101,13 +107,18 @@ func UpdatePost(c *gin.Context) {
 	post.Description = input.Description
 	post.Image = input.Image
 
-	mydb.Database.Db.Save(&post)
-	//TODO нет проверки на ошибку
+	result := mydb.Database.Db.Save(&post)
+
+	if result.Error != nil {
+		mydb.UppendErrorWithPath(result.Error)
+		c.AbortWithError(http.StatusUnauthorized, result.Error)
+	}
 	c.JSON(http.StatusOK, gin.H{"success": "Post Updated"})
 	c.JSON(http.StatusOK, map[string]interface{}{
-		"id":    input.ID,
-		"title": input.Title,
-		"desc":  input.Description,
+		"id":    post.ID,
+		"title": post.Title,
+		"desc":  post.Description,
+		"image": post.Image,
 	})
 
 }
@@ -117,6 +128,7 @@ func DeletePost(c *gin.Context) {
 	header := c.GetHeader(authorizationHeader)
 	if header == "" {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "auth header is really empty"})
+
 		return
 	}
 
@@ -124,8 +136,9 @@ func DeletePost(c *gin.Context) {
 
 	userHeader := mydb.Database.Db.Find(&user, "jwt_token = ?", header)
 	if userHeader.Error != nil {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired"})
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "token expired, sing-in again"})
 		mydb.UppendErrorWithPath(userHeader.Error)
+		c.AbortWithError(http.StatusUnauthorized, userHeader.Error)
 		return
 	}
 	headerParts := strings.Split(header, ".")
@@ -149,7 +162,10 @@ func DeletePost(c *gin.Context) {
 		return
 	}
 
-	mydb.Database.Db.Delete(&post)
-	//TODO нет проверки на ошибку
+	result := mydb.Database.Db.Delete(&post)
+	if result.Error != nil {
+		mydb.UppendErrorWithPath(result.Error)
+		c.AbortWithError(http.StatusUnauthorized, result.Error)
+	}
 	c.JSON(http.StatusOK, gin.H{"success": "Post Deleted"})
 }

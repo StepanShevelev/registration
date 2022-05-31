@@ -3,8 +3,10 @@ package db
 import (
 	"crypto/sha1"
 	"fmt"
+	cfg "github.com/StepanShevelev/registration/pkg/config"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v4"
+	"github.com/sirupsen/logrus"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"net/http"
@@ -28,13 +30,22 @@ type DbInstance struct {
 
 var Database DbInstance
 
-func ConnectToDb() {
-	dsn := "host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres sslmode=disable timezone=Europe/Moscow"
+func ConnectToDb(config *cfg.Config) {
+	//dsn := "host=localhost port=5432 user=postgres password=mysecretpassword dbname=postgres sslmode=disable timezone=Europe/Moscow"
+
+	dsn := fmt.Sprintf(
+		"host=%s port=%d user=%s password=%s dbname=%s sslmode=%s timezone=Europe/Moscow",
+		config.DB.Host,
+		config.DB.Port,
+		config.DB.Username,
+		config.DB.Password,
+		config.DB.Name,
+		config.DB.SSLMode,
+	)
 
 	db, err := gorm.Open(postgres.Open(dsn), &gorm.Config{})
 	if err != nil {
-		UppendErrorWithPath(err)
-		//TODO Ты пытаешься записывать ошибку в базу до того, как подключился в базу.
+		logrus.Info(err)
 	}
 
 	db.AutoMigrate(&User{})
@@ -46,10 +57,16 @@ func ConnectToDb() {
 	}
 }
 
-func CreateUser(user *User) {
+func CreateUser(c *gin.Context, user *User) error {
 
-	Database.Db.Create(&user)
-	//TODO Проверка на ошибку
+	result := Database.Db.Create(&user)
+	if result.Error != nil {
+		UppendErrorWithPath(result.Error)
+		c.AbortWithError(http.StatusUnauthorized, result.Error)
+	}
+	c.JSON(http.StatusOK, gin.H{"success": "user created"})
+	return nil
+
 }
 
 func GeneratePasswordHash(password string) string {
@@ -63,7 +80,7 @@ func GenerateToken(email string) (string, error) {
 	user, err := FindUserByEmail(email)
 	if err != nil {
 		UppendErrorWithPath(err)
-		//TODO не возвращаешь ошибки
+		return "", err
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, &tokenClaims{
@@ -79,13 +96,12 @@ func GenerateToken(email string) (string, error) {
 
 func LoginCheck(c *gin.Context, email string, password string) error {
 
-	var err error
 	var u *User
 
-	err = Database.Db.Model(&u).Where("email = ?", email).Take(&u).Error
+	err := Database.Db.Model(&u).Where("email = ?", email).Take(&u).Error
 	if err != nil {
 		UppendErrorWithPath(err)
-		//TODO не возвращаешь ошибки
+		return err
 	}
 
 	oldHash := u.PasswordHash
@@ -93,8 +109,8 @@ func LoginCheck(c *gin.Context, email string, password string) error {
 
 	if newHash != oldHash {
 		c.JSON(http.StatusUnauthorized, gin.H{"error": "incorrect password"})
-		//TODO не возвращаешь текста ошибки, то есть в случае происхождения ошибки вернул по сути ничего
-		return nil
+		c.AbortWithError(http.StatusUnauthorized, err)
+		return err
 	}
 
 	//token, err := GenerateToken(u.Email)
@@ -113,9 +129,8 @@ func FindUserById(Id int) (*User, error) {
 	result := Database.Db.Preload("Posts.Users").Find(&user, "id = ?", Id)
 
 	if result.Error != nil {
-		//TODO не возвращаешь и не логируешь ошибку
 		UppendErrorWithPath(result.Error)
-		return nil, nil
+		return nil, result.Error
 	}
 	return user, nil
 }
@@ -126,9 +141,8 @@ func FindPostById(Id int) (*Post, error) {
 	result := Database.Db.Preload("Users").Find(&post, "id = ?", Id)
 
 	if result.Error != nil {
-		//TODO не возвращаешь и не логируешь ошибку
-		return nil, nil
-		//TODO nil вместо ошибки?
+		UppendErrorWithPath(result.Error)
+		return nil, result.Error
 	}
 	return post, nil
 }
@@ -139,15 +153,18 @@ func FindUserByEmail(Email string) (*User, error) {
 	result := Database.Db.Find(&user, "email = ?", Email)
 
 	if result.Error != nil {
-		//TODO не возвращаешь и не логируешь ошибку
-		return nil, nil
-		//TODO nil вместо ошибки?
+		UppendErrorWithPath(result.Error)
+		return nil, result.Error
 	}
 	return user, nil
 }
 
-func CreatePost(post *Post) {
+func CreatePost(c *gin.Context, post *Post) error {
 
-	Database.Db.Create(&post)
-	//TODO не обрабатываешь возможные ошибки и не даёшь никакого ответа по результату
+	result := Database.Db.Create(&post)
+	if result.Error != nil {
+		UppendErrorWithPath(result.Error)
+		c.AbortWithError(http.StatusUnauthorized, result.Error)
+	}
+	return nil
 }

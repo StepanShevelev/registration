@@ -24,9 +24,9 @@ func SignUp(c *gin.Context) {
 	var input signUpInput
 
 	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "something wrong with json"})
 		mydb.UppendErrorWithPath(err)
-		//TODO зачем продолжается функция после этой ошибки?
-		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
+		return
 	}
 	var u mydb.User
 
@@ -40,9 +40,12 @@ func SignUp(c *gin.Context) {
 	u.Password = input.Password
 	u.Email = input.Email
 	u.JwtToken, _ = mydb.GenerateToken(input.Email)
-	//TODO ошибочка
-	mydb.CreateUser(&u)
-	//TODO проверка ошибки
+
+	err := mydb.CreateUser(c, &u)
+	if err != nil {
+		mydb.UppendErrorWithPath(err)
+		c.AbortWithError(http.StatusUnauthorized, err)
+	}
 	c.JSON(http.StatusOK, gin.H{"message": "registration success"})
 
 	c.JSON(http.StatusOK, map[string]interface{}{
@@ -52,7 +55,6 @@ func SignUp(c *gin.Context) {
 }
 
 type signInInput struct {
-	ID       int    `json:"id"`
 	Email    string `json:"email" `
 	Password string `json:"password" `
 }
@@ -61,24 +63,28 @@ func SignIn(c *gin.Context) {
 	var input signInInput
 
 	if err := c.BindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "something wrong with binding json"})
 		mydb.UppendErrorWithPath(err)
-		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 		return
 	}
 
 	err := mydb.LoginCheck(c, input.Email, input.Password)
 	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "incorrect password"})
 		mydb.UppendErrorWithPath(err)
-		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
+		c.Abort()
 		return
 	}
 
-	token, err := mydb.GenerateToken(input.Email)
+	token, notOk := mydb.GenerateToken(input.Email)
 	if err != nil {
+		c.JSON(http.StatusBadRequest, map[string]interface{}{
+			"error, could not generate token": notOk,
+		})
 		mydb.UppendErrorWithPath(err)
-		//TODO нужен ответ сервера об ошибке. прим c.JSON(http.StatusBadRequest, gin.H{"error": "хочу жсон"})
 		return
 	}
+
 	user, err := mydb.FindUserByEmail(input.Email)
 	if err != nil {
 		mydb.UppendErrorWithPath(err)

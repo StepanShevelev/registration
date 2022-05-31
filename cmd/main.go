@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/sirupsen/logrus"
 	"net/http"
 
 	"github.com/StepanShevelev/registration/pkg/api"
@@ -13,19 +14,18 @@ func main() {
 
 	config := cfg.New()
 	if err := config.Load("./configs", "config", "yml"); err != nil {
-		mydb.UppendErrorWithPath(err)
-		//TODO Ты пытаешься записывать ошибку в базу до того, как подключился в базу.
+		logrus.Info(err)
 	}
 
-	mydb.ConnectToDb()
+	mydb.ConnectToDb(config)
 	//api.InitRoutes()
 
 	r := gin.Default()
 
 	auth := r.Group("/auth")
 
-	auth.POST("/register", api.SignUp)
-	auth.POST("/login", api.SignIn)
+	auth.POST("/sing-up", api.SignUp)
+	auth.POST("/sing-in", api.SignIn)
 
 	apii := r.Group("/API", api.UserIdentity)
 	{
