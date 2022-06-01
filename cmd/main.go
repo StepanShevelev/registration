@@ -42,6 +42,6 @@ func main() {
 	})
 	r.Run(":" + config.Port)
 
-	http.ListenAndServe(":8000", nil)
+	http.ListenAndServe(":"+config.Port, nil)
 
 }
