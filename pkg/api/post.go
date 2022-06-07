@@ -12,9 +12,19 @@ type PostInput struct {
 	Title       string `json:"title" `
 	Description string `json:"description"`
 	Image       string `json:"image"`
-	//UserId      int             `json:"user_id" binding:"required"`
 }
 
+// CreatePost
+//@Summary CreatePost
+// @Tags API
+// @Description create post
+// @ID create-post
+// @Accept  json
+// @Produce  json
+// @Param input body PostInput true "post info"
+// @Success 200 {object} map[string]interface{}
+// @Failure 400,401 {object} map[string]interface{}
+// @Router /API/create_post [post]
 func CreatePost(c *gin.Context) {
 
 	header := c.GetHeader(authorizationHeader)
@@ -53,9 +63,14 @@ func CreatePost(c *gin.Context) {
 	post.Image = input.Image
 	post.Users = append(post.Users, mydb.User{ID: user.ID})
 
-	mydb.Database.Db.Model(&post).Association("Users").Append(&user)
-	//TODO нет проверки на ошибку
-	err := mydb.CreatePost(c, &post)
+	err := mydb.Database.Db.Model(&post).Association("Users").Append(&user)
+	if err != nil {
+		mydb.UppendErrorWithPath(err)
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Associacion problems"})
+		c.AbortWithError(http.StatusBadRequest, err)
+	}
+
+	err = mydb.CreatePost(c, &post)
 	if err != nil {
 		mydb.UppendErrorWithPath(err)
 		c.AbortWithError(http.StatusUnauthorized, err)
@@ -63,6 +78,17 @@ func CreatePost(c *gin.Context) {
 	c.JSON(http.StatusOK, gin.H{"success": "Post Created"})
 }
 
+// UpdatePost
+//@Summary UpdatePost
+// @Tags API
+// @Description update post
+// @ID update-post
+// @Accept  json
+// @Produce  json
+// @Param input body PostInput true "post info"
+// @Success 200 {object} map[string]interface{} "post updated"
+// @Failure 400,401 {object} map[string]interface{}
+// @Router /API/update_post [patch]
 func UpdatePost(c *gin.Context) {
 
 	header := c.GetHeader(authorizationHeader)
@@ -123,6 +149,17 @@ func UpdatePost(c *gin.Context) {
 
 }
 
+// DeletePost
+//@Summary UpdatePost
+// @Tags API
+// @Description delete post
+// @ID delete-post
+// @Accept  json
+// @Produce  json
+// @Param input body PostInput true "post id"
+// @Success 200 {object} map[string]interface{} "post deleted"
+// @Failure 400,401 {object} map[string]interface{}
+// @Router /API/delete_post [delete]
 func DeletePost(c *gin.Context) {
 
 	header := c.GetHeader(authorizationHeader)

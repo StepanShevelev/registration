@@ -19,6 +19,17 @@ type signUpInput struct {
 	PasswordConfirm string `json:"password_confirm" binding:"required"`
 }
 
+// SignUp
+//@Summary SignUp
+// @Tags auth
+// @Description create account
+// @ID sing-up
+// @Accept  json
+// @Produce  json
+// @Param input body signUpInput true "account info"
+// @Success 200 {object} map[string]interface{} "token"
+// @Failure 400,401 {object} map[string]interface{}
+// @Router /auth/sign-up [post]
 func SignUp(c *gin.Context) {
 
 	var input signUpInput
@@ -59,6 +70,17 @@ type signInInput struct {
 	Password string `json:"password" `
 }
 
+// SignIn
+//@Summary SignIn
+// @Tags auth
+// @Description sing-in
+// @ID sing-in
+// @Accept  json
+// @Produce  json
+// @Param input body signInInput true "credentials"
+// @Success 200 {object} map[string]interface{} "token"
+// @Failure 400 {object} map[string]interface{}
+// @Router /auth/sign-in [post]
 func SignIn(c *gin.Context) {
 	var input signInInput
 
@@ -100,10 +122,15 @@ func SignIn(c *gin.Context) {
 	})
 }
 
-type findProfileInInput struct {
-	UserId int `json:"user_id" binding:"required"`
-}
-
+// GetUserProfile
+//@Summary SignIn
+// @Tags API
+// @Description user profile
+// @ID get-profile
+// @Produce  json
+// @Success 200 {object} mydb.User
+// @Failure 400,401 {object} map[string]interface{}
+// @Router /API/profile [get]
 func GetUserProfile(c *gin.Context) {
 	//var input findProfileInInput
 

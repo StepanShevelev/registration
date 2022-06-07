@@ -1,0 +1,320 @@
+basePath: /
+definitions:
+  db.Post:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      title:
+        type: string
+      updatedAt:
+        type: string
+      users:
+        items:
+          $ref: '#/definitions/db.User'
+        type: array
+    type: object
+  db.User:
+    properties:
+      createdAt:
+        type: string
+      deletedAt:
+        $ref: '#/definitions/gorm.DeletedAt'
+      email:
+        type: string
+      id:
+        type: integer
+      name:
+        type: string
+      posts:
+        items:
+          $ref: '#/definitions/db.Post'
+        type: array
+      updatedAt:
+        type: string
+    type: object
+  github.com_StepanShevelev_registration_pkg_api.PostInput:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      title:
+        type: string
+    type: object
+  github.com_StepanShevelev_registration_pkg_api.signInInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  github.com_StepanShevelev_registration_pkg_api.signUpInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      password_confirm:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - password_confirm
+    type: object
+  gorm.DeletedAt:
+    properties:
+      time:
+        type: string
+      valid:
+        description: Valid is true if Time is not NULL
+        type: boolean
+    type: object
+  pkg_api.PostInput:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      image:
+        type: string
+      title:
+        type: string
+    type: object
+  pkg_api.signInInput:
+    properties:
+      email:
+        type: string
+      password:
+        type: string
+    type: object
+  pkg_api.signUpInput:
+    properties:
+      email:
+        type: string
+      name:
+        type: string
+      password:
+        type: string
+      password_confirm:
+        type: string
+    required:
+    - email
+    - name
+    - password
+    - password_confirm
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: Registration and interaction with post`s
+  title: Registration
+  version: "1.0"
+paths:
+  /API/create_post:
+    post:
+      consumes:
+      - application/json
+      description: create post
+      operationId: create-post
+      parameters:
+      - description: post info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api.PostInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: CreatePost
+      tags:
+      - API
+  /API/delete_post:
+    delete:
+      consumes:
+      - application/json
+      description: delete post
+      operationId: delete-post
+      parameters:
+      - description: post id
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api.PostInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: post deleted
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: UpdatePost
+      tags:
+      - API
+  /API/profile:
+    get:
+      description: user profile
+      operationId: get-profile
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/db.User'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: SignIn
+      tags:
+      - API
+  /API/update_post:
+    patch:
+      consumes:
+      - application/json
+      description: update post
+      operationId: update-post
+      parameters:
+      - description: post info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api.PostInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: post updated
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: UpdatePost
+      tags:
+      - API
+  /auth/sign-in:
+    post:
+      consumes:
+      - application/json
+      description: sing-in
+      operationId: sing-in
+      parameters:
+      - description: credentials
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api.signInInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+      summary: SignIn
+      tags:
+      - auth
+  /auth/sign-up:
+    post:
+      consumes:
+      - application/json
+      description: create account
+      operationId: sing-up
+      parameters:
+      - description: account info
+        in: body
+        name: input
+        required: true
+        schema:
+          $ref: '#/definitions/pkg_api.signUpInput'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: token
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized
+          schema:
+            additionalProperties: true
+            type: object
+      summary: SignUp
+      tags:
+      - auth
+securityDefinitions:
+  ApiKeyAuth:
+    in: header
+    name: Authorization
+    type: apiKey
+swagger: "2.0"
