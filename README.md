@@ -7,7 +7,7 @@
 {
 
     "name":"stepan",
-    "email":"stepansheveljov@rambler.ru",
+    "email":"stepansheveljov@mail.ru",
     "password":"12345",
     "password_confirm":"12345"
 
@@ -34,7 +34,7 @@
 ### BODY :
 {
 
-    "email":"stepansheveljov@rambler.ru",
+    "email":"stepansheveljov@mail.ru",
     "password":"12345",
 
 }
