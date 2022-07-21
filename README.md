@@ -119,7 +119,7 @@ eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJleHAiOjE2NTQxNjQxOTQsImlhdCI6MTY1NDA3Nzc
 
 ### RESPONSE :
 {
-"email": "stepansheveljov@rambler.ru",
+"email": "stepansheveljov@mail.ru",
 "id": 1,
 "name": "stepan",
 "posts": []
